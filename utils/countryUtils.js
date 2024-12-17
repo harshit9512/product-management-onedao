@@ -1,8 +1,5 @@
-// utils/countryUtils.js
-
-// List of restricted countries
 const restrictedCountries = new Set([
-   "Afganistan","Iran","Syria","Pakistan","Iraq","Libya"
+   "Afghanistan","Iran","Syria","Pakistan","Iraq","Libya"
   ]);
   
   /**
@@ -16,10 +13,8 @@ const restrictedCountries = new Set([
       throw new Error('Invalid country name provided.');
     }
   
-    // Convert the provided country name and the countries in the restricted list to lowercase for case-insensitive comparison
     const countryLower = country.trim().toLowerCase();
   
-    // Iterate through the restricted countries and check if the lowercase version of the country is in the set
     for (let restrictedCountry of restrictedCountries) {
       if (restrictedCountry.toLowerCase() === countryLower) {
         return { allowed: false, message: "Registration restricted: country is in the restricted list." };

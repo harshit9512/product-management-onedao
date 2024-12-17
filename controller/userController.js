@@ -1,16 +1,48 @@
 const { User } = require('../models');
+const { createResponse } = require('../utils/responseUtils');
+const { Op } = require('sequelize');  // Import Sequelize operators
 
-// Get All Users
 exports.getUsers = async (req, res) => {
+  const { page = 1, pageSize = 10, sortBy = 'createdAt', order = 'ASC', filters = {} } = req.body;
+
+  // Validate page and pageSize
+  const pageNum = isNaN(parseInt(page, 10)) ? 1 : parseInt(page, 10);
+  const limitNum = isNaN(parseInt(pageSize, 10)) ? 10 : parseInt(pageSize, 10);
+
+  const where = {};
+
+  // Add filters dynamically (for name, email, etc.)
+  if (filters.name) where.name = { [Op.like]: `%${filters.name}%` };
+  if (filters.email) where.email = { [Op.like]: `%${filters.email}%` };
+
+  const validSortFields = ['name', 'email', 'createdAt'];
+  const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+
   try {
-    const users = await User.findAll();
-    res.json(users);
+    const { count, rows } = await User.findAndCountAll({
+      where,
+      limit: limitNum,
+      offset: (pageNum - 1) * limitNum,
+      order: [[sortField, order.toUpperCase()]],
+    });
+
+    const totalPages = Math.ceil(count / limitNum);
+
+    return res.status(200).json(createResponse(true, "Users retrieved successfully", {
+      users: rows,
+      pagination: {
+        currentPage: pageNum,
+        pageSize: limitNum,
+        totalUsers: count,
+        totalPages: totalPages,
+      },
+    }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error fetching users:', err);  // Add more specific error logging
+    return res.status(500).json(createResponse(false, "Failed to retrieve users", null, { code: 500, message: err.message }));
   }
 };
 
-// Update User
 exports.updateUser = async (req, res) => {
   try {
     console.log('Updating User');
@@ -18,27 +50,26 @@ exports.updateUser = async (req, res) => {
     const user = await User.findByPk(id);
     if (user) {
       await user.update(req.body);
-      res.json(user);
+      return res.status(200).json(createResponse(true, "User updated successfully", user));
     } else {
-      res.status(404).json({ error: 'User not found' });
+      return res.status(404).json(createResponse(false, "User not found", null, { code: 404, message: "User with the given ID does not exist" }));
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json(createResponse(false, "Failed to update user", null, { code: 500, message: err.message }));
   }
 };
 
-// Delete User
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findByPk(id);
     if (user) {
       await user.destroy();
-      res.json({ message: 'User deleted' });
+      return res.status(200).json(createResponse(true, "User deleted successfully"));
     } else {
-      res.status(404).json({ error: 'User not found' });
+      return res.status(404).json(createResponse(false, "User not found", null, { code: 404, message: "User with the given ID does not exist" }));
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json(createResponse(false, "Failed to delete user", null, { code: 500, message: err.message }));
   }
 };

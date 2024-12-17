@@ -4,7 +4,7 @@ const productController = require('../controller/productController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 router.post('/create-product', verifyToken, productController.createProduct);
-router.get('/get-product', verifyToken, productController.getAllProducts);
+router.post('/get-product', verifyToken, productController.getAllProducts);
 router.post('/update-product/:id', verifyToken, productController.updateProduct);
 router.delete('/delete-product/:id', verifyToken, productController.deleteProduct);
 
